@@ -1,7 +1,7 @@
 package main // Defines the main package. The program starts execution here.
 
 import (
-	"bytes"
+	"bytes"         // Provides utilities for manipulating byte slices, used here for buffering PDF data
 	"io"            // Provides utilities for reading and writing data streams
 	"log"           // Provides logging functions for printing errors and information
 	"net/http"      // Allows making HTTP requests
