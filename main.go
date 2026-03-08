@@ -68,6 +68,7 @@ func main() { // Entry point of the program
 	// Print the unique PDF URLs to the console
 	for _, pdfURL := range uniquePDFURLs {
 		downloadPDF(pdfURL, outputDir) // Download the PDF
+		time.Sleep(1 * time.Second)
 	}
 
 	time.Sleep(time.Minute * 5)
