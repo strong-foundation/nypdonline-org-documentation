@@ -69,6 +69,8 @@ func main() { // Entry point of the program
 	for _, pdfURL := range uniquePDFURLs {
 		downloadPDF(pdfURL, outputDir) // Download the PDF
 	}
+
+	time.Sleep(time.Minute * 5)
 }
 
 // Checks whether a given directory exists
