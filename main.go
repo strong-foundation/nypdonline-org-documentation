@@ -14,6 +14,7 @@ import ( // Start the import block for required standard libraries.
 
 var ( // Start the package-level variable block.
 	outputDir = "PDFs/" // Directory where PDFs will be saved.
+	allNYPDProfileFilename = "nypd_profiles.json" // Filename for raw NYPD profiles response.
 ) // End the variable block.
 
 func init() { // Run setup before main executes.
@@ -25,7 +26,44 @@ func init() { // Run setup before main executes.
 func main() { // Program entry point.
 	trialDecisionsLibrary()  // Download trial decision PDFs.
 	deviationLetterLibrary() // Download deviation letter PDFs.
+	fetchNYPDProfies()       // Fetch NYPD profiles (currently just saves raw response).
 } // End main.
+
+func fetchNYPDProfies() {
+	httpClient := &http.Client{} // Create an HTTP client for the API call.
+	// Build the POST request with filter payload. // Explain request creation.
+	httpRequest, requestCreationError := http.NewRequest("POST", "https://nypdonline.org/api/reports/b805fa11-d5d2-43f7-8c23-1649f5d387f1/data", strings.NewReader(`[{"key":"@SearchName","values":[""]},{"key":"@LastNameFirstLetter","values":[""]}]`)) // Create the API request with JSON body.
+	if requestCreationError != nil {                                                                                                                                                                                                                      // Check for request creation errors.
+		log.Fatal(requestCreationError) // Log the error and exit.
+	} // End request creation error handling.
+	// Tell the server we are sending JSON. // Explain header purpose.
+	httpRequest.Header.Add("content-type", "application/json") // Set JSON content type.
+	// Execute the request. // Explain the HTTP call.
+	httpResponse, requestExecutionError := httpClient.Do(httpRequest) // Send the request to the API.
+	if requestExecutionError != nil {                                 // Check for request execution errors.
+		log.Fatal(requestExecutionError) // Log the error and exit.
+	} // End request execution error handling.
+	defer httpResponse.Body.Close() // Ensure response body is closed.
+	// Read the response body in full. // Explain reading response.
+	responseBodyBytes, responseReadError := io.ReadAll(httpResponse.Body) // Read all response bytes.
+	if responseReadError != nil {                                         // Check for read errors.
+		log.Fatal(responseReadError) // Log the error and exit.
+	} // End response read error handling.
+	// Write the raw response to a file for inspection. // Explain writing raw response.
+	writeToFile(allNYPDProfileFilename, responseBodyBytes) // Save the API response to disk for analysis.
+}
+
+/*
+It takes in a path and content to write to that file.
+It uses the os.WriteFile function to write the content to that file.
+It checks for errors and logs them.
+*/
+func writeToFile(path string, content []byte) {
+	err := os.WriteFile(path, content, 0644)
+	if err != nil {
+		log.Fatalln(err)
+	}
+}
 
 // Fetch deviation letter metadata and download linked PDFs. // Describe deviation letter workflow.
 func deviationLetterLibrary() { // Start deviation letter download workflow.
