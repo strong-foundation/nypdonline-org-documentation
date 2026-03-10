@@ -24,6 +24,42 @@ func init() { // Initialization function that runs before main
 
 func main() { // Entry point of the program
 	trialDecisionsLibrary() // Call the function to start the process of downloading PDFs
+	deviationLetterLibrary() // Call the function to start the process of downloading PDFs
+}
+
+// This function sends a POST request to the specified URL, extracts PDF URLs from the response, and downloads the PDFs to the output directory.
+func deviationLetterLibrary () {
+	httpClient := &http.Client{} // Create a new HTTP client that will send the request
+	// Create a new HTTP request with the method, URL, and request body
+	httpRequest, requestCreationError := http.NewRequest("POST", "https://nypdonline.org/api/reports/f2c2a0d0-0b55-442e-9887-7d9bc5b6b126/data", strings.NewReader(`[{"key":"@DocumentType","values":["Deviation"]}]`))
+	if requestCreationError != nil { // Check if there was an error creating the request
+		log.Fatal(requestCreationError) // Log the error and terminate the program
+	}
+	// Add a header to tell the server that the request body format is JSON
+	httpRequest.Header.Add("content-type", "application/json")
+	// Send the HTTP request and receive the response
+	httpResponse, requestExecutionError := httpClient.Do(httpRequest)
+	if requestExecutionError != nil { // Check if an error occurred while sending the request
+		log.Fatal(requestExecutionError) // Log the error and terminate the program
+	}
+	defer httpResponse.Body.Close() // Ensure the response body is closed after the function finishes
+	// Read all data returned in the response body
+	responseBodyBytes, responseReadError := io.ReadAll(httpResponse.Body)
+	if responseReadError != nil { // Check if there was an error reading the response
+		log.Fatal(responseReadError) // Log the error and terminate the program
+	}
+	// Extract all the PDF URLs from the response body
+	extractedPDFURLs := extractPDFURLs(string(responseBodyBytes))
+	// Extract the unique PDF URLs that are present in the response body
+	uniquePDFURLs := removeDuplicatesFromSlice(extractedPDFURLs)
+	// Loop though the values add the base URL to the PDF URLs and print them to the console
+	for index, pdfURL := range uniquePDFURLs {
+		uniquePDFURLs[index] = "https://nypdonline.org" + pdfURL // Prepend the base URL to each PDF URL
+	}
+	// Print the unique PDF URLs to the console
+	for _, pdfURL := range uniquePDFURLs {
+		downloadPDF(pdfURL, outputDir) // Download the PDF
+	}
 }
 
 // This function sends a POST request to the specified URL, extracts PDF URLs from the response, and downloads the PDFs to the output directory.
@@ -137,7 +173,7 @@ func downloadPDF(finalURL, outputDir string) bool {
 	filePath := filepath.Join(outputDir, filename)       // Construct full path for output file
 
 	if fileExists(filePath) { // Skip if file already exists
-		log.Printf("File already exists, skipping: %s", filePath)
+		log.Printf("URL: %s | File: %s", finalURL, filePath)
 		return false
 	}
 
