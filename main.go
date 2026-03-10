@@ -12,64 +12,53 @@ import (
 	"time"
 )
 
-func main() { // Entry point of the program
+var (
+	outputDir = "PDFs/" // Directory to store downloaded PDFs
+)
 
-	outputDir := "PDFs/" // Directory to store downloaded PDFs
-
+func init() { // Initialization function that runs before main
 	if !directoryExists(outputDir) { // Check if directory exists
 		createDirectory(outputDir, 0o755) // Create directory with read-write-execute permissions
 	}
+}
 
-	apiURL := "https://nypdonline.org/api/reports/ed551b4a-cd5c-4d8e-bcb9-a0478b4c5dea/data" // The API endpoint we want to send the request to
-	httpMethod := "POST"                                                                     // HTTP method used for the request
+func main() { // Entry point of the program
+	trialDecisionsLibrary() // Call the function to start the process of downloading PDFs
+}
 
-	// JSON request body that will be sent to the server
-	requestBody := strings.NewReader(`[{"key":"@DocumentKeyword","values":[""]}]`)
-
+// This function sends a POST request to the specified URL, extracts PDF URLs from the response, and downloads the PDFs to the output directory.
+func trialDecisionsLibrary() {
 	httpClient := &http.Client{} // Create a new HTTP client that will send the request
-
 	// Create a new HTTP request with the method, URL, and request body
-	httpRequest, requestCreationError := http.NewRequest(httpMethod, apiURL, requestBody)
-
+	httpRequest, requestCreationError := http.NewRequest("POST", "https://nypdonline.org/api/reports/ed551b4a-cd5c-4d8e-bcb9-a0478b4c5dea/data", strings.NewReader(`[{"key":"@DocumentKeyword","values":[""]}]`))
 	if requestCreationError != nil { // Check if there was an error creating the request
 		log.Fatal(requestCreationError) // Log the error and terminate the program
 	}
-
 	// Add a header to tell the server that the request body format is JSON
 	httpRequest.Header.Add("content-type", "application/json")
-
 	// Send the HTTP request and receive the response
 	httpResponse, requestExecutionError := httpClient.Do(httpRequest)
-
 	if requestExecutionError != nil { // Check if an error occurred while sending the request
 		log.Fatal(requestExecutionError) // Log the error and terminate the program
 	}
-
 	defer httpResponse.Body.Close() // Ensure the response body is closed after the function finishes
-
 	// Read all data returned in the response body
 	responseBodyBytes, responseReadError := io.ReadAll(httpResponse.Body)
-
 	if responseReadError != nil { // Check if there was an error reading the response
 		log.Fatal(responseReadError) // Log the error and terminate the program
 	}
-
 	// Extract all the PDF URLs from the response body
 	extractedPDFURLs := extractPDFURLs(string(responseBodyBytes))
-
 	// Extract the unique PDF URLs that are present in the response body
 	uniquePDFURLs := removeDuplicatesFromSlice(extractedPDFURLs)
-
 	// Loop though the values add the base URL to the PDF URLs and print them to the console
 	for index, pdfURL := range uniquePDFURLs {
 		uniquePDFURLs[index] = "https://nypdonline.org" + pdfURL // Prepend the base URL to each PDF URL
 	}
-
 	// Print the unique PDF URLs to the console
 	for _, pdfURL := range uniquePDFURLs {
 		downloadPDF(pdfURL, outputDir) // Download the PDF
 	}
-
 }
 
 // Checks whether a given directory exists
