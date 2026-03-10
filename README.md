@@ -159,11 +159,7 @@ The repository is organized to mirror the structure of the website as closely as
 Typical structure example:
 
 ```
-/documents
-/forms
-/reports
-/policies
-/downloads
+/PDFs/
 ```
 
 This makes it easier to locate files and understand where they originated.
